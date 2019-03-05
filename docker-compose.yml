@@ -1,0 +1,23 @@
+version: '3'
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_DB: redeam-library
+      POSTGRES_USER: postgres-dev
+      POSTGRES_PASSWORD: sn34kyp4$$w0rD # would be better to use docker-secrets
+    ports:
+      - 5433:5433
+    volumes:
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+  app:
+    build: .
+    command: ["go", "run", "cmd/server/main.go"]
+    volumes:
+      - .:/go/src/app
+    ports:
+      - "5001"
+    depends_on:
+      - db
+    links:
+      - db
