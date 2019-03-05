@@ -28,7 +28,7 @@ func main() {
 
 	c := v1.NewBookServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3000) //  3 second timeout should be good
+	ctx, cancel := context.WithTimeout(context.Background(), 30000) //  3 second timeout should be good
 	defer cancel()
 
 	t := time.Now().In(time.UTC)
