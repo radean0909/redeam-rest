@@ -12,12 +12,12 @@ services:
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
   app:
     build: .
-    command: ["go", "run", "main.go"]
     volumes:
       - .:/go/src/app
     ports:
       - "5001"
     depends_on:
       - db
+    command: ["./wait-for-it.sh", "db:5432", "--", "go", "run", "main.go"]
     links:
       - db
