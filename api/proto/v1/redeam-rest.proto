@@ -2,6 +2,34 @@ syntax = "proto3";
 package v1;
 
 import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+	info: {
+		title: "Book service";
+		version: "1.0";
+		contact: {
+			name: "redeam-rest";
+			url: "https://github.com/radean0909/redeam-rest";
+			email: "radean0909@gmail.com";
+        };
+    };
+    schemes: HTTP;
+    consumes: "application/json";
+    produces: "application/json";
+    responses: {
+		key: "404";
+		value: {
+			description: "Returned when the resource does not exist.";
+			schema: {
+				json_schema: {
+					type: STRING;
+				}
+			}
+		}
+	}
+};
 
 // Books the library has
 message Book {
@@ -61,9 +89,40 @@ message ReadAllResponse{
 }
 
 service BookService {
-    rpc Create(CreateRequest) returns (CreateResponse);
-    rpc Read(ReadRequest) returns (ReadResponse);
-    rpc Update(UpdateRequest) returns (UpdateResponse);
-    rpc Delete(DeleteRequest) returns (DeleteResponse);
-    rpc ReadAll(ReadAllRequest) returns (ReadAllResponse);
+    rpc ReadAll(ReadAllRequest) returns (ReadAllResponse){
+        option (google.api.http) = {
+            get: "/v1/book/all"
+        };
+    }
+
+    rpc Create(CreateRequest) returns (CreateResponse){
+        option (google.api.http) = {
+            post: "/v1/book"
+            body: "*"
+        };
+    }
+
+    rpc Read(ReadRequest) returns (ReadResponse){
+        option (google.api.http) = {
+            get: "/v1/book/{id}"
+        };
+    }
+
+    rpc Update(UpdateRequest) returns (UpdateResponse){
+        option (google.api.http) = {
+            put: "/v1/book/{book.id}"
+            body: "*"
+
+            additional_bindings {
+                patch: "/v1/book/{book.id}"
+                body: "*"
+            }
+        };
+    }
+
+    rpc Delete(DeleteRequest) returns (DeleteResponse){
+        option (google.api.http) = {
+            delete: "/v1/book/{id}"
+        };
+    }
 }

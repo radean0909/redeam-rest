@@ -1,0 +1,357 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Book service",
+    "version": "1.0",
+    "contact": {
+      "name": "redeam-rest",
+      "url": "https://github.com/radean0909/redeam-rest",
+      "email": "radean0909@gmail.com"
+    }
+  },
+  "schemes": [
+    "http"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/book": {
+      "post": {
+        "operationId": "Create",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateResponse"
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "format": "string"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "BookService"
+        ]
+      }
+    },
+    "/v1/book/all": {
+      "get": {
+        "operationId": "ReadAll",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ReadAllResponse"
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "format": "string"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "api",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "BookService"
+        ]
+      }
+    },
+    "/v1/book/{book.id}": {
+      "put": {
+        "operationId": "Update",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateResponse"
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "format": "string"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "book.id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpdateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "BookService"
+        ]
+      },
+      "patch": {
+        "operationId": "Update2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateResponse"
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "format": "string"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "book.id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpdateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "BookService"
+        ]
+      }
+    },
+    "/v1/book/{id}": {
+      "get": {
+        "operationId": "Read",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ReadResponse"
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "format": "string"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "api",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "BookService"
+        ]
+      },
+      "delete": {
+        "operationId": "Delete",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteResponse"
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "format": "string"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "api",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "BookService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "BookStatus": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "CHECKED_IN",
+        "CHECKED_OUT"
+      ],
+      "default": "UNKNOWN"
+    },
+    "v1Book": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "publisher": {
+          "type": "string"
+        },
+        "publish_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "rating": {
+          "type": "number",
+          "format": "double"
+        },
+        "status": {
+          "$ref": "#/definitions/BookStatus"
+        }
+      },
+      "title": "Books the library has"
+    },
+    "v1CreateRequest": {
+      "type": "object",
+      "properties": {
+        "api": {
+          "type": "string"
+        },
+        "book": {
+          "$ref": "#/definitions/v1Book"
+        }
+      }
+    },
+    "v1CreateResponse": {
+      "type": "object",
+      "properties": {
+        "api": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1DeleteResponse": {
+      "type": "object",
+      "properties": {
+        "api": {
+          "type": "string"
+        },
+        "deleted": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1ReadAllResponse": {
+      "type": "object",
+      "properties": {
+        "api": {
+          "type": "string"
+        },
+        "books": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1Book"
+          }
+        }
+      }
+    },
+    "v1ReadResponse": {
+      "type": "object",
+      "properties": {
+        "api": {
+          "type": "string"
+        },
+        "book": {
+          "$ref": "#/definitions/v1Book"
+        }
+      }
+    },
+    "v1UpdateRequest": {
+      "type": "object",
+      "properties": {
+        "api": {
+          "type": "string"
+        },
+        "book": {
+          "$ref": "#/definitions/v1Book"
+        }
+      }
+    },
+    "v1UpdateResponse": {
+      "type": "object",
+      "properties": {
+        "api": {
+          "type": "string"
+        },
+        "updated": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    }
+  }
+}
