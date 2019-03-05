@@ -14,11 +14,10 @@ services:
     build: .
     volumes:
       - .:/go/src/app
-
     ports:
-      - "5001"
+      - "80"
     depends_on:
       - db
-    command: ["/go/src/app/wait-for-it.sh", "db:5432", "--", "go", "run", "main.go"]
+    command: ["/go/src/app/wait_for_it.sh", "db:5432", "--", "go", "run", "main.go"]
     links:
       - db
