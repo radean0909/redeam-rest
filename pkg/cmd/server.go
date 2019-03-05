@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 
 	_ "github.com/lib/pq"
 
@@ -22,6 +23,7 @@ func RunServer() error {
 		"0.0.0.0",
 		"redeam-library")
 	db, err := sql.Open("postgres", dsn)
+	log.Println("opening db")
 	if err != nil {
 		return fmt.Errorf("failed to open database: %v", err)
 	}
