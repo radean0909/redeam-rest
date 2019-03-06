@@ -44,6 +44,6 @@ func RunServer(ctx context.Context, grpcPort, httpPort string) error {
 		_ = srv.Shutdown(ctx)
 	}()
 
-	log.Println("starting HTTP/REST gateway...")
+	log.Println("starting HTTP/REST gateway on port " + httpPort)
 	return srv.ListenAndServe()
 }
