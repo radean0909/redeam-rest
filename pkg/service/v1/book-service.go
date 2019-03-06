@@ -62,16 +62,11 @@ func (s *bookServiceServer) Create(ctx context.Context, req *v1.CreateRequest) (
 		return nil, status.Error(codes.InvalidArgument, "publish_date field has invalid format: "+err.Error())
 	}
 
-	createSQL := `INSERT INTO Book (Title, Author, Publisher, PublishDate, Rating, Status) VALUES ($1, $2, $3, $4, $5, $6)`
-	res, err := c.ExecContext(ctx, createSQL, req.Book.Title, req.Book.Author, req.Book.Publisher, publish_date, req.Book.Rating, req.Book.Status)
+	createSQL := `INSERT INTO Book (Title, Author, Publisher, PublishDate, Rating, Status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING Id`
+	id := 0
+	res, err := c.QueryRow(ctx, createSQL, req.Book.Title, req.Book.Author, req.Book.Publisher, publish_date, req.Book.Rating, req.Book.Status).Scan(&id)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "failed to insert: "+err.Error())
-	}
-
-	// get ID
-	id, err := res.LastInsertId()
-	if err != nil {
-		return nil, status.Error(codes.Unknown, "failed to retrieve id: "+err.Error())
 	}
 
 	return &v1.CreateResponse{
