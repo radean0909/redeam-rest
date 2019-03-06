@@ -21,7 +21,7 @@ func RunServer() error {
 		"db",
 		5432,
 		"postgres-dev",
-		"sn34kyp4$$w0rD",
+		"sn34kyp4ssw0rD",
 		"redeam-library")
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
