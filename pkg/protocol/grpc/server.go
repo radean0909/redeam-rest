@@ -12,9 +12,9 @@ import (
 	"github.com/radean0909/redeam-rest/pkg/api/v1"
 )
 
-//  gRPC service to publish Book service
+// RunServer gRPC service to publish Book service
 func RunServer(ctx context.Context, v1API v1.BookServiceServer, port string) error {
-	listen, err := net.Listen("tcp", "0.0.0.0:"+port)
+	listen, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		return err
 	}
