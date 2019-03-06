@@ -57,13 +57,13 @@ func (s *bookServiceServer) Create(ctx context.Context, req *v1.CreateRequest) (
 	defer c.Close()
 
 	// Check for proper timestamp formatting
-	fmt.Println(req)
+	fmt.Println(req.Book)
 	publish_date, err := ptypes.Timestamp(req.Book.PublishDate)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "publish_date field has invalid format: "+err.Error())
 	}
 
-	res, err := c.ExecContext(ctx, "INSERT INTO Book(Title, Author, Publisher, PublishDate, Rating, Status) VALUES (?, ?, ?, ?, ?, ?)",
+	res, err := c.ExecContext(ctx, "INSERT INTO Book (Title, Author, Publisher, PublishDate, Rating, Status) VALUES (?, ?, ?, ?, ?, ?)",
 		req.Book.Title, req.Book.Author, req.Book.Publisher, publish_date, req.Book.Rating, req.Book.Status)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "failed to insert: "+err.Error())
