@@ -57,9 +57,9 @@ func (s *bookServiceServer) Create(ctx context.Context, req *v1.CreateRequest) (
 	defer c.Close()
 
 	// Check for proper timestamp formatting
-	publish_date, err := ptypes.Timestamp(req.Book.PublishDate)
+	publishDate, err := ptypes.Timestamp(req.Book.PublishDate)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "publish_date field has invalid format: "+err.Error())
+		return nil, status.Error(codes.InvalidArgument, "publishDate field has invalid format: "+err.Error())
 	}
 
 	createSQL := `INSERT INTO Book (Title, Author, Publisher, PublishDate, Rating, Status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING Id`
@@ -71,7 +71,7 @@ func (s *bookServiceServer) Create(ctx context.Context, req *v1.CreateRequest) (
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRow(req.Book.Title, req.Book.Author, req.Book.Publisher, publish_date, req.Book.Rating, req.Book.Status).Scan(&id)
+	err = stmt.QueryRow(req.Book.Title, req.Book.Author, req.Book.Publisher, publishDate, req.Book.Rating, req.Book.Status).Scan(&id)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "failed to insert: "+err.Error())
 	}
@@ -93,7 +93,7 @@ func (s *bookServiceServer) Read(ctx context.Context, req *v1.ReadRequest) (*v1.
 	}
 	defer c.Close()
 
-	rows, err := c.QueryContext(ctx, "SELECT ID, Title, Publisher, PublishDate, Rating, Status FROM Book WHERE ID=?",
+	rows, err := c.QueryContext(ctx, "SELECT Id, Title, Publisher, PublishDate, Rating, Status FROM Book WHERE Id=?",
 		req.Id)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "couldn't select: "+err.Error())
@@ -104,22 +104,22 @@ func (s *bookServiceServer) Read(ctx context.Context, req *v1.ReadRequest) (*v1.
 		if err := rows.Err(); err != nil {
 			return nil, status.Error(codes.Unknown, "failed to retrieve data: "+err.Error())
 		}
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("cannot find ID='%d'",
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("cannot find Id='%d'",
 			req.Id))
 	}
 
 	var row v1.Book
-	var publish_date time.Time
-	if err := rows.Scan(&row.Id, &row.Title, &row.Author, &row.Publisher, &publish_date, &row.Rating, &row.Status); err != nil {
+	var publishDate time.Time
+	if err := rows.Scan(&row.Id, &row.Title, &row.Author, &row.Publisher, &publishDate, &row.Rating, &row.Status); err != nil {
 		return nil, status.Error(codes.Unknown, "couldn't retrieve field values: "+err.Error())
 	}
-	row.PublishDate, err = ptypes.TimestampProto(publish_date)
+	row.PublishDate, err = ptypes.TimestampProto(publishDate)
 	if err != nil {
-		return nil, status.Error(codes.Unknown, "publish_Date field has invalid format: "+err.Error())
+		return nil, status.Error(codes.Unknown, "publishDate field has invalid format: "+err.Error())
 	}
 
 	if rows.Next() {
-		return nil, status.Error(codes.Unknown, fmt.Sprintf("multiple rows with ID='%d'",
+		return nil, status.Error(codes.Unknown, fmt.Sprintf("multiple rows with Id='%d'",
 			req.Id))
 	}
 
@@ -141,13 +141,13 @@ func (s *bookServiceServer) Update(ctx context.Context, req *v1.UpdateRequest) (
 	}
 	defer c.Close()
 
-	publish_date, err := ptypes.Timestamp(req.Book.PublishDate)
+	publishDate, err := ptypes.Timestamp(req.Book.PublishDate)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "publish_date field has invalid format: "+err.Error())
+		return nil, status.Error(codes.InvalidArgument, "publishDate field has invalid format: "+err.Error())
 	}
 
-	res, err := c.ExecContext(ctx, "UPDATE Book SET Title=?, Author=?, Publisher=?, PublishDate=?, Rating=?, Status=? WHERE ID=?",
-		req.Book.Title, req.Book.Author, req.Book.Publisher, publish_date, req.Book.Rating, req.Book.Status, req.Book.Id)
+	res, err := c.ExecContext(ctx, "UPDATE Book SET Title=?, Author=?, Publisher=?, PublishDate=?, Rating=?, Status=? WHERE Id=?",
+		req.Book.Title, req.Book.Author, req.Book.Publisher, publishDate, req.Book.Rating, req.Book.Status, req.Book.Id)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "failed to update: "+err.Error())
 	}
@@ -158,7 +158,7 @@ func (s *bookServiceServer) Update(ctx context.Context, req *v1.UpdateRequest) (
 	}
 
 	if rows == 0 {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("ID='%d' not found",
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Id='%d' not found",
 			req.Book.Id))
 	}
 
@@ -179,7 +179,7 @@ func (s *bookServiceServer) Delete(ctx context.Context, req *v1.DeleteRequest) (
 	}
 	defer c.Close()
 
-	res, err := c.ExecContext(ctx, "DELETE FROM Book WHERE ID=?", req.Id)
+	res, err := c.ExecContext(ctx, "DELETE FROM Book WHERE Id=?", req.Id)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "failed to delete: "+err.Error())
 	}
@@ -190,7 +190,7 @@ func (s *bookServiceServer) Delete(ctx context.Context, req *v1.DeleteRequest) (
 	}
 
 	if rows == 0 {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("ID='%d' is not found",
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Id='%d' is not found",
 			req.Id))
 	}
 
@@ -211,22 +211,22 @@ func (s *bookServiceServer) ReadAll(ctx context.Context, req *v1.ReadAllRequest)
 	}
 	defer c.Close()
 
-	rows, err := c.QueryContext(ctx, "SELECT ID, Title, Publisher, PublishDate, Rating, Status FROM Book")
+	rows, err := c.QueryContext(ctx, "SELECT Id, Title, Publisher, PublishDate, Rating, Status FROM Book")
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "failed to SELECT: "+err.Error())
 	}
 	defer rows.Close()
 
-	var publish_date time.Time
+	var publishDate time.Time
 	list := []*v1.Book{}
 	for rows.Next() {
 		row := new(v1.Book)
-		if err := rows.Scan(&row.Id, &row.Title, &row.Author, &row.Publisher, &publish_date, &row.Rating, &row.Status); err != nil {
+		if err := rows.Scan(&row.Id, &row.Title, &row.Author, &row.Publisher, &publishDate, &row.Rating, &row.Status); err != nil {
 			return nil, status.Error(codes.Unknown, "couldn't retrieve field values: "+err.Error())
 		}
-		row.PublishDate, err = ptypes.TimestampProto(publish_date)
+		row.PublishDate, err = ptypes.TimestampProto(publishDate)
 		if err != nil {
-			return nil, status.Error(codes.Unknown, "publish_Date field has invalid format: "+err.Error())
+			return nil, status.Error(codes.Unknown, "publishDate field has invalid format: "+err.Error())
 		}
 		list = append(list, row)
 	}
