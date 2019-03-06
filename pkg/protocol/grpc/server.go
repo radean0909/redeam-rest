@@ -14,7 +14,7 @@ import (
 
 //  gRPC service to publish Book service
 func RunServer(ctx context.Context, v1API v1.BookServiceServer, port string) error {
-	listen, err := net.Listen("tcp", ":"+port)
+	listen, err := net.Listen("tcp", "0.0.0.0:"+port)
 	if err != nil {
 		return err
 	}
