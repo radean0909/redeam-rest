@@ -93,7 +93,7 @@ func (s *bookServiceServer) Read(ctx context.Context, req *v1.ReadRequest) (*v1.
 	}
 	defer c.Close()
 
-	rows, err := c.QueryContext(ctx, "SELECT Id, Title, Publisher, PublishDate, Rating, Status FROM Book WHERE Id=?",
+	rows, err := c.QueryContext(ctx, "SELECT Id, Title, Publisher, PublishDate, Rating, Status FROM Book WHERE Id=$1",
 		req.Id)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "couldn't select: "+err.Error())
@@ -146,7 +146,7 @@ func (s *bookServiceServer) Update(ctx context.Context, req *v1.UpdateRequest) (
 		return nil, status.Error(codes.InvalidArgument, "publishDate field has invalid format: "+err.Error())
 	}
 
-	res, err := c.ExecContext(ctx, "UPDATE Book SET Title=?, Author=?, Publisher=?, PublishDate=?, Rating=?, Status=? WHERE Id=?",
+	res, err := c.ExecContext(ctx, "UPDATE Book SET Title=?, Author=?, Publisher=?, PublishDate=?, Rating=?, Status=? WHERE Id=$1",
 		req.Book.Title, req.Book.Author, req.Book.Publisher, publishDate, req.Book.Rating, req.Book.Status, req.Book.Id)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "failed to update: "+err.Error())
