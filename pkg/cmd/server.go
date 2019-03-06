@@ -18,9 +18,10 @@ func RunServer() error {
 
 	dsn := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
+		"127.0.0.1",
+		"5432",
 		"postgres-dev",
 		"sn34kyp4$$w0rD",
-		"127.0.0.1",
 		"redeam-library")
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
