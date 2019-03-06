@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/radean0909/redeam-rest/pkg/cmd"
@@ -12,6 +13,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	} else {
-		fmt.Println("Starting Redeam Server")
+		log.Println("Starting Redeam Server")
 	}
 }
