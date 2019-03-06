@@ -45,7 +45,7 @@ Content-Length: 269
 
 ### Request: GET /v1/book/all
 `curl -i -H 'Accept: application/json' http://localhost:8080/v1/book/all`
-* Response:* 
+*Response:* 
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
