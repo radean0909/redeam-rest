@@ -30,7 +30,6 @@ func Test_bookServiceServer_Create(t *testing.T) {
 		req *v1.CreateRequest
 	}
 
-	rows := sqlmock.NewRows([]string{"api", "id"}).AddRow(1, 1)
 	tests := []struct {
 		name    string
 		s       v1.BookServiceServer
@@ -57,8 +56,7 @@ func Test_bookServiceServer_Create(t *testing.T) {
 				},
 			},
 			mock: func() {
-				mock.ExpectQuery("INSERT INTO Book").WithArgs("title", "author", "publisher", now, 2.0, 1).
-					WillReturnRows(rows)
+				mock.ExpectQuery("INSERT INTO Book").WithArgs("title", "author", "publisher", now, 2.0, 1)
 			},
 			want: &v1.CreateResponse{
 				Api: "v1",
@@ -181,7 +179,7 @@ func Test_bookServiceServer_Read(t *testing.T) {
 				},
 			},
 			mock: func() {
-				rows := sqlmock.NewRows([]string{"ID", "Title", "Author", "Publisher", "PublishDate", "Rating", "Status"}).
+				rows := sqlmock.NewRows([]string{"Id", "Title", "Author", "Publisher", "PublishDate", "Rating", "Status"}).
 					AddRow(1, "title", "author", "publisher", now, 2.0, 1)
 				mock.ExpectQuery("SELECT (.+) FROM Book").WithArgs(1).WillReturnRows(rows)
 			},
@@ -238,7 +236,7 @@ func Test_bookServiceServer_Read(t *testing.T) {
 				},
 			},
 			mock: func() {
-				rows := sqlmock.NewRows([]string{"ID", "Title", "Author", "Publisher", "PublishDate", "Rating", "Status"})
+				rows := sqlmock.NewRows([]string{"Id", "Title", "Author", "Publisher", "PublishDate", "Rating", "Status"})
 				mock.ExpectQuery("SELECT (.+) FROM Book").WithArgs(1).WillReturnRows(rows)
 			},
 			wantErr: true,
@@ -594,7 +592,7 @@ func Test_bookServiceServer_ReadAll(t *testing.T) {
 				},
 			},
 			mock: func() {
-				rows := sqlmock.NewRows([]string{"ID", "Title", "Author", "Publisher", "PublishDate", "Rating", "Status"}).
+				rows := sqlmock.NewRows([]string{"Id", "Title", "Author", "Publisher", "PublishDate", "Rating", "Status"}).
 					AddRow(1, "title1", "author1", "publisher1", now1, 2.0, 1).
 					AddRow(2, "title2", "author2", "publisher2", now2, 3.0, 2)
 				mock.ExpectQuery("SELECT (.+) FROM Book").WillReturnRows(rows)
@@ -633,7 +631,7 @@ func Test_bookServiceServer_ReadAll(t *testing.T) {
 				},
 			},
 			mock: func() {
-				rows := sqlmock.NewRows([]string{"ID", "Title", "Author", "Publisher", "PublishDate", "Rating", "Status"})
+				rows := sqlmock.NewRows([]string{"Id", "Title", "Author", "Publisher", "PublishDate", "Rating", "Status"})
 				mock.ExpectQuery("SELECT (.+) FROM Book").WillReturnRows(rows)
 			},
 			want: &v1.ReadAllResponse{
