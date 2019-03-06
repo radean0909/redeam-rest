@@ -29,6 +29,8 @@ func Test_bookServiceServer_Create(t *testing.T) {
 		ctx context.Context
 		req *v1.CreateRequest
 	}
+
+	rows := sqlmock.NewRows([]string{"api", "id"}).AddRow(1, 1)
 	tests := []struct {
 		name    string
 		s       v1.BookServiceServer
@@ -55,8 +57,8 @@ func Test_bookServiceServer_Create(t *testing.T) {
 				},
 			},
 			mock: func() {
-				mock.ExpectExec("INSERT INTO Book").WithArgs("title", "author", "publisher", now, 2.0, 1).
-					WillReturnResult(sqlmock.NewResult(1, 1))
+				mock.ExpectQuery("INSERT INTO Book").WithArgs("title", "author", "publisher", now, 2.0, 1).
+					WillReturnRows(rows)
 			},
 			want: &v1.CreateResponse{
 				Api: "v1",
@@ -124,7 +126,7 @@ func Test_bookServiceServer_Create(t *testing.T) {
 				},
 			},
 			mock: func() {
-				mock.ExpectExec("INSERT INTO Book").WithArgs("title", "author", "publisher", now, 2.0, 1).
+				mock.ExpectQuery("INSERT INTO Book").WithArgs("title", "author", "publisher", now, 2.0, 1).
 					WillReturnError(errors.New("INSERT failed"))
 			},
 			wantErr: true,
