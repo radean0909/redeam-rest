@@ -211,7 +211,7 @@ func (s *bookServiceServer) ReadAll(ctx context.Context, req *v1.ReadAllRequest)
 	}
 	defer c.Close()
 
-	rows, err := c.QueryContext(ctx, "SELECT Id, Title, Publisher, PublishDate, Rating, Status FROM Book")
+	rows, err := c.QueryContext(ctx, "SELECT Id, Title, Author, Publisher, PublishDate, Rating, Status FROM Book")
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "failed to SELECT: "+err.Error())
 	}
