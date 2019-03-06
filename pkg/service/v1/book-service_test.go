@@ -23,7 +23,7 @@ func Test_bookServiceServer_Create(t *testing.T) {
 	defer db.Close()
 	s := NewBookServiceServer(db)
 	now := time.Now().In(time.UTC)
-	publish_date, _ := ptypes.TimestampProto(now)
+	publishDate, _ := ptypes.TimestampProto(now)
 
 	type args struct {
 		ctx context.Context
@@ -48,7 +48,7 @@ func Test_bookServiceServer_Create(t *testing.T) {
 						Title:       "title",
 						Author:      "author",
 						Publisher:   "publisher",
-						PublishDate: publish_date,
+						PublishDate: publishDate,
 						Rating:      2.0,
 						Status:      1,
 					},
@@ -74,7 +74,7 @@ func Test_bookServiceServer_Create(t *testing.T) {
 						Title:       "title",
 						Author:      "author",
 						Publisher:   "publisher",
-						PublishDate: publish_date,
+						PublishDate: publishDate,
 						Rating:      2.0,
 						Status:      1,
 					},
@@ -84,7 +84,7 @@ func Test_bookServiceServer_Create(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Invalid publish_date format",
+			name: "Invalid publishDate format",
 			s:    s,
 			args: args{
 				ctx: ctx,
@@ -117,7 +117,7 @@ func Test_bookServiceServer_Create(t *testing.T) {
 						Title:       "title",
 						Author:      "author",
 						Publisher:   "publisher",
-						PublishDate: publish_date,
+						PublishDate: publishDate,
 						Rating:      2.0,
 						Status:      1,
 					},
@@ -126,29 +126,6 @@ func Test_bookServiceServer_Create(t *testing.T) {
 			mock: func() {
 				mock.ExpectExec("INSERT INTO Book").WithArgs("title", "author", "publisher", now, 2.0, 1).
 					WillReturnError(errors.New("INSERT failed"))
-			},
-			wantErr: true,
-		},
-		{
-			name: "LastInsertId failed",
-			s:    s,
-			args: args{
-				ctx: ctx,
-				req: &v1.CreateRequest{
-					Api: "v1",
-					Book: &v1.Book{
-						Title:       "title",
-						Author:      "author",
-						Publisher:   "publisher",
-						PublishDate: publish_date,
-						Rating:      2.0,
-						Status:      1,
-					},
-				},
-			},
-			mock: func() {
-				mock.ExpectExec("INSERT INTO Book").WithArgs("title", "author", "publisher", now, 2.0, 1).
-					WillReturnResult(sqlmock.NewErrorResult(errors.New("LastInsertId failed")))
 			},
 			wantErr: true,
 		},
@@ -177,7 +154,7 @@ func Test_bookServiceServer_Read(t *testing.T) {
 	defer db.Close()
 	s := NewBookServiceServer(db)
 	now := time.Now().In(time.UTC)
-	publish_date, _ := ptypes.TimestampProto(now)
+	publishDate, _ := ptypes.TimestampProto(now)
 
 	type args struct {
 		ctx context.Context
@@ -213,7 +190,7 @@ func Test_bookServiceServer_Read(t *testing.T) {
 					Title:       "title",
 					Author:      "author",
 					Publisher:   "publisher",
-					PublishDate: publish_date,
+					PublishDate: publishDate,
 					Rating:      2.0,
 					Status:      1,
 				},
@@ -290,7 +267,7 @@ func Test_bookServiceServer_Update(t *testing.T) {
 	defer db.Close()
 	s := NewBookServiceServer(db)
 	now := time.Now().In(time.UTC)
-	publish_date, _ := ptypes.TimestampProto(now)
+	publishDate, _ := ptypes.TimestampProto(now)
 
 	type args struct {
 		ctx context.Context
@@ -316,7 +293,7 @@ func Test_bookServiceServer_Update(t *testing.T) {
 						Title:       "new title",
 						Author:      "new author",
 						Publisher:   "new publisher",
-						PublishDate: publish_date,
+						PublishDate: publishDate,
 						Rating:      2.0,
 						Status:      1,
 					},
@@ -343,7 +320,7 @@ func Test_bookServiceServer_Update(t *testing.T) {
 						Title:       "new title",
 						Author:      "new author",
 						Publisher:   "new publisher",
-						PublishDate: publish_date,
+						PublishDate: publishDate,
 						Rating:      2.0,
 						Status:      1,
 					},
@@ -353,7 +330,7 @@ func Test_bookServiceServer_Update(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Invalid publish_date field format",
+			name: "Invalid publishDate field format",
 			s:    s,
 			args: args{
 				ctx: ctx,
@@ -387,7 +364,7 @@ func Test_bookServiceServer_Update(t *testing.T) {
 						Title:       "new title",
 						Author:      "new author",
 						Publisher:   "new publisher",
-						PublishDate: publish_date,
+						PublishDate: publishDate,
 						Rating:      2.0,
 						Status:      1,
 					},
@@ -411,7 +388,7 @@ func Test_bookServiceServer_Update(t *testing.T) {
 						Title:       "new title",
 						Author:      "new author",
 						Publisher:   "new publisher",
-						PublishDate: publish_date,
+						PublishDate: publishDate,
 						Rating:      2.0,
 						Status:      1,
 					},
@@ -435,7 +412,7 @@ func Test_bookServiceServer_Update(t *testing.T) {
 						Title:       "new title",
 						Author:      "new author",
 						Publisher:   "new publisher",
-						PublishDate: publish_date,
+						PublishDate: publishDate,
 						Rating:      2.0,
 						Status:      1,
 					},
@@ -589,9 +566,9 @@ func Test_bookServiceServer_ReadAll(t *testing.T) {
 	defer db.Close()
 	s := NewBookServiceServer(db)
 	now1 := time.Now().In(time.UTC)
-	publish_date1, _ := ptypes.TimestampProto(now1)
+	publishDate1, _ := ptypes.TimestampProto(now1)
 	now2 := time.Now().In(time.UTC)
-	publish_date2, _ := ptypes.TimestampProto(now2)
+	publishDate2, _ := ptypes.TimestampProto(now2)
 
 	type args struct {
 		ctx context.Context
@@ -628,7 +605,7 @@ func Test_bookServiceServer_ReadAll(t *testing.T) {
 						Title:       "title1",
 						Author:      "author1",
 						Publisher:   "publisher1",
-						PublishDate: publish_date1,
+						PublishDate: publishDate1,
 						Rating:      2.0,
 						Status:      1,
 					},
@@ -637,7 +614,7 @@ func Test_bookServiceServer_ReadAll(t *testing.T) {
 						Title:       "title2",
 						Author:      "author2",
 						Publisher:   "publisher2",
-						PublishDate: publish_date2,
+						PublishDate: publishDate2,
 						Rating:      3.0,
 						Status:      2,
 					},

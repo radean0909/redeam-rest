@@ -50,6 +50,12 @@ func (s *bookServiceServer) Create(ctx context.Context, req *v1.CreateRequest) (
 	if err := s.checkAPI(req.Api); err != nil {
 		return nil, err
 	}
+
+	// Req data sanity check
+	if req.Book == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid data format")
+	}
+
 	c, err := s.connect(ctx)
 	if err != nil {
 		return nil, err
@@ -135,6 +141,11 @@ func (s *bookServiceServer) Update(ctx context.Context, req *v1.UpdateRequest) (
 	if err := s.checkAPI(req.Api); err != nil {
 		return nil, err
 	}
+
+	// Req data sanity check
+	if req.Book == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid data format")
+	}
 	c, err := s.connect(ctx)
 	if err != nil {
 		return nil, err
@@ -179,7 +190,7 @@ func (s *bookServiceServer) Delete(ctx context.Context, req *v1.DeleteRequest) (
 	}
 	defer c.Close()
 
-	res, err := c.ExecContext(ctx, "DELETE FROM Book WHERE Id=?", req.Id)
+	res, err := c.ExecContext(ctx, "DELETE FROM Book WHERE Id=$1", req.Id)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "failed to delete: "+err.Error())
 	}
