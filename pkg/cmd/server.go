@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 
 	_ "github.com/lib/pq"
 
@@ -20,10 +19,9 @@ func RunServer() error {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?%s",
 		"postgres-dev",
 		"sn34kyp4$$w0rD",
-		"0.0.0.0",
+		"127.0.0.1",
 		"redeam-library")
 	db, err := sql.Open("postgres", dsn)
-	log.Println("opening db")
 	if err != nil {
 		return fmt.Errorf("failed to open database: %v", err)
 	}

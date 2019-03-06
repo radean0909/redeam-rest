@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: postgres-dev
       POSTGRES_PASSWORD: sn34kyp4$$w0rD # would be better to use docker-secrets
     ports:
-      - 5432:5432
+      - "5432:5432"
     volumes:
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
   app:
@@ -15,7 +15,7 @@ services:
     volumes:
       - .:/go/src/app
     ports:
-      - "5000"
+      - "8080:8080"
     depends_on:
       - db
     command: ["/go/src/app/wait_for_it.sh", "db:5432", "-t", "30",  "--", "go", "run", "main.go"]
