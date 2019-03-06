@@ -16,6 +16,18 @@ In retrospect, I might choose a simpler approach, because my time ended up being
 # Stack notes
 This is built using golang, postgres and gRPC
 
+# Install/Deploy instructions
+
+## Start server
+* `git clone https://github.com/radean0909/redeam-rest.git`
+* `cd redeam-rest`
+* `docker-compose up`
+
+## Run tests
+`docker-compose run app go test -v ../../pkg/service/v1`
+### Note about tests
+I decided to write unit tests at the Database level to check at the most fundamental level. As a result of this, tests will succeed or fail as intended, however, HTTP response codes are not being tested at this point, though that is something that would be completed for a true production environment
+
 # Implemented Endpoints
 
 ## Request: GET /v1/book/{id}

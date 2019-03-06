@@ -121,11 +121,11 @@ func (s *bookServiceServer) Read(ctx context.Context, req *v1.ReadRequest) (*v1.
 	}
 	row.PublishDate, err = ptypes.TimestampProto(publishDate)
 	if err != nil {
-		return nil, status.Error(codes.Unknown, "publishDate field has invalid format: "+err.Error())
+		return nil, status.Error(codes.InvalidArgument, "publishDate field has invalid format: "+err.Error())
 	}
 
 	if rows.Next() {
-		return nil, status.Error(codes.Unknown, fmt.Sprintf("multiple rows with Id='%d'",
+		return nil, status.Error(codes.AlreadyExists, fmt.Sprintf("multiple rows with Id='%d'",
 			req.Id))
 	}
 
@@ -165,7 +165,7 @@ func (s *bookServiceServer) Update(ctx context.Context, req *v1.UpdateRequest) (
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		return nil, status.Error(codes.Unknown, "retrieve rows affected value error: "+err.Error())
+		return nil, status.Error(codes.NotFound, "retrieve rows affected value error: "+err.Error())
 	}
 
 	if rows == 0 {
@@ -197,7 +197,7 @@ func (s *bookServiceServer) Delete(ctx context.Context, req *v1.DeleteRequest) (
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		return nil, status.Error(codes.Unknown, "failed to retrieve rows affected value: "+err.Error())
+		return nil, status.Error(codes.NotFound, "failed to retrieve rows affected value: "+err.Error())
 	}
 
 	if rows == 0 {
@@ -237,7 +237,7 @@ func (s *bookServiceServer) ReadAll(ctx context.Context, req *v1.ReadAllRequest)
 		}
 		row.PublishDate, err = ptypes.TimestampProto(publishDate)
 		if err != nil {
-			return nil, status.Error(codes.Unknown, "publishDate field has invalid format: "+err.Error())
+			return nil, status.Error(codes.InvalidArgument, "publishDate field has invalid format: "+err.Error())
 		}
 		list = append(list, row)
 	}

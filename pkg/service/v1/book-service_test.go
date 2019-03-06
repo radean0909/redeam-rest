@@ -2,39 +2,96 @@ package v1
 
 import (
 	"context"
-	"errors"
+	"database/sql"
+	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	_ "github.com/lib/pq"
 
 	"github.com/radean0909/redeam-rest/pkg/api/v1"
 )
 
-func Test_bookServiceServer_Create(t *testing.T) {
+func connectToDB() (*sql.DB, error) {
+	dsn := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		"db",
+		5432,
+		"postgres-dev",
+		"sn34kyp4ssw0rD",
+		"redeam-library")
+	db, err := sql.Open("postgres", dsn)
+	return db, err
+}
+
+func clearTable(db *sql.DB) {
+	db.Exec("DELETE FROM book")
+	db.Exec("ALTER SEQUENCE book_id_seq RESTART WITH 1")
+}
+
+func addEntries(num int) {
 	ctx := context.Background()
-	db, mock, err := sqlmock.New()
+	// Get the DB
+	db, err := connectToDB()
+
 	if err != nil {
-		t.Fatalf("error when opening stub database connection: '%s'", err)
+		fmt.Errorf("Couldn't connect to DB.")
+		return
 	}
-	defer db.Close()
+	// Clear the table
+	clearTable(db)
+
+	// Start the server
 	s := NewBookServiceServer(db)
-	now := time.Now().In(time.UTC)
+
+	now, _ := time.Parse("RFC3339", "2002-10-02T10:00:00")
 	publishDate, _ := ptypes.TimestampProto(now)
 
+	for i := 1; i <= num; i++ {
+		s.Create(ctx, &v1.CreateRequest{
+			Api: "v1",
+			Book: &v1.Book{
+				Title:       "title" + strconv.Itoa(i),
+				Author:      "author" + strconv.Itoa(i),
+				Publisher:   "publisher",
+				PublishDate: publishDate,
+				Rating:      1.0,
+				Status:      2,
+			},
+		})
+	}
+
+}
+func Test_bookServiceServer_Create(t *testing.T) {
+	ctx := context.Background()
+	// Get the DB
+	db, err := connectToDB()
+
+	if err != nil {
+		t.Errorf("Couldn't connect to DB.")
+	}
+	// Clear the table
+	clearTable(db)
+
+	// Start the server
+	s := NewBookServiceServer(db)
+
+	// run tests
 	type args struct {
 		ctx context.Context
 		req *v1.CreateRequest
 	}
 
+	now, _ := time.Parse("RFC3339", "2002-10-02T10:00:00")
+	publishDate, _ := ptypes.TimestampProto(now)
+
 	tests := []struct {
 		name    string
 		s       v1.BookServiceServer
 		args    args
-		mock    func()
 		want    *v1.CreateResponse
 		wantErr bool
 	}{
@@ -55,21 +112,19 @@ func Test_bookServiceServer_Create(t *testing.T) {
 					},
 				},
 			},
-			mock: func() {
-				mock.ExpectQuery("INSERT INTO Book").WithArgs("title", "author", "publisher", now, 2.0, 1)
-			},
 			want: &v1.CreateResponse{
 				Api: "v1",
 				Id:  1,
 			},
+			wantErr: false,
 		},
 		{
-			name: "Unsupported API",
+			name: "Invalid API Version",
 			s:    s,
 			args: args{
 				ctx: ctx,
 				req: &v1.CreateRequest{
-					Api: "v1000",
+					Api: "v10000",
 					Book: &v1.Book{
 						Title:       "title",
 						Author:      "author",
@@ -79,92 +134,53 @@ func Test_bookServiceServer_Create(t *testing.T) {
 						Status:      1,
 					},
 				},
-			},
-			mock:    func() {},
-			wantErr: true,
-		},
-		{
-			name: "Invalid publishDate format",
-			s:    s,
-			args: args{
-				ctx: ctx,
-				req: &v1.CreateRequest{
-					Api: "v1",
-					Book: &v1.Book{
-						Title:     "title",
-						Author:    "author",
-						Publisher: "publisher",
-						PublishDate: &timestamp.Timestamp{
-							Seconds: 1,
-							Nanos:   -1,
-						},
-						Rating: 2.0,
-						Status: 1,
-					},
-				},
-			},
-			mock:    func() {},
-			wantErr: true,
-		},
-		{
-			name: "INSERT failed",
-			s:    s,
-			args: args{
-				ctx: ctx,
-				req: &v1.CreateRequest{
-					Api: "v1",
-					Book: &v1.Book{
-						Title:       "title",
-						Author:      "author",
-						Publisher:   "publisher",
-						PublishDate: publishDate,
-						Rating:      2.0,
-						Status:      1,
-					},
-				},
-			},
-			mock: func() {
-				mock.ExpectQuery("INSERT INTO Book").WithArgs("title", "author", "publisher", now, 2.0, 1).
-					WillReturnError(errors.New("INSERT failed"))
 			},
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.mock()
 			got, err := tt.s.Create(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("bookServiceServer.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if err == nil && !reflect.DeepEqual(got, tt.want) {
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("bookServiceServer.Create() = %v, want %v", got, tt.want)
+				return
 			}
 		})
 	}
+
+	defer db.Close()
+
 }
 
 func Test_bookServiceServer_Read(t *testing.T) {
 	ctx := context.Background()
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("error when opening stub database connection: '%s'", err)
-	}
-	defer db.Close()
-	s := NewBookServiceServer(db)
-	now := time.Now().In(time.UTC)
-	publishDate, _ := ptypes.TimestampProto(now)
+	// Get the DB
+	db, err := connectToDB()
 
+	if err != nil {
+		t.Errorf("Couldn't connect to DB.")
+	}
+
+	// Start the server
+	s := NewBookServiceServer(db)
+
+	// run tests
 	type args struct {
 		ctx context.Context
 		req *v1.ReadRequest
 	}
+	now, _ := time.Parse("RFC3339", "2002-10-02T10:00:00")
+	publishDate, _ := ptypes.TimestampProto(now)
+
 	tests := []struct {
 		name    string
 		s       v1.BookServiceServer
 		args    args
-		mock    func()
 		want    *v1.ReadResponse
 		wantErr bool
 	}{
@@ -178,11 +194,6 @@ func Test_bookServiceServer_Read(t *testing.T) {
 					Id:  1,
 				},
 			},
-			mock: func() {
-				rows := sqlmock.NewRows([]string{"Id", "Title", "Author", "Publisher", "PublishDate", "Rating", "Status"}).
-					AddRow(1, "title", "author", "publisher", now, 2.0, 1)
-				mock.ExpectQuery("SELECT (.+) FROM Book").WithArgs(1).WillReturnRows(rows)
-			},
 			want: &v1.ReadResponse{
 				Api: "v1",
 				Book: &v1.Book{
@@ -195,89 +206,76 @@ func Test_bookServiceServer_Read(t *testing.T) {
 					Status:      1,
 				},
 			},
+			wantErr: false,
 		},
 		{
-			name: "Unsupported API",
+			name: "Invalid API Version",
 			s:    s,
 			args: args{
 				ctx: ctx,
 				req: &v1.ReadRequest{
-					Api: "v1",
+					Api: "v10000",
 					Id:  1,
 				},
-			},
-			mock:    func() {},
-			wantErr: true,
-		},
-		{
-			name: "SELECT failed",
-			s:    s,
-			args: args{
-				ctx: ctx,
-				req: &v1.ReadRequest{
-					Api: "v1",
-					Id:  1,
-				},
-			},
-			mock: func() {
-				mock.ExpectQuery("SELECT (.+) FROM Book").WithArgs(1).
-					WillReturnError(errors.New("SELECT failed"))
 			},
 			wantErr: true,
 		},
 		{
-			name: "Not found",
+			name: "Invalid Id value",
 			s:    s,
 			args: args{
 				ctx: ctx,
 				req: &v1.ReadRequest{
 					Api: "v1",
-					Id:  1,
+					Id:  1000,
 				},
-			},
-			mock: func() {
-				rows := sqlmock.NewRows([]string{"Id", "Title", "Author", "Publisher", "PublishDate", "Rating", "Status"})
-				mock.ExpectQuery("SELECT (.+) FROM Book").WithArgs(1).WillReturnRows(rows)
 			},
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.mock()
 			got, err := tt.s.Read(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("bookServiceServer.Read() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-
-			if err == nil && !reflect.DeepEqual(got, tt.want) {
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("bookServiceServer.Read() = %v, want %v", got, tt.want)
+				return
 			}
 		})
 	}
+
+	defer db.Close()
 }
 
 func Test_bookServiceServer_Update(t *testing.T) {
 	ctx := context.Background()
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("error when opening stub database connection: '%s'", err)
-	}
-	defer db.Close()
-	s := NewBookServiceServer(db)
-	now := time.Now().In(time.UTC)
-	publishDate, _ := ptypes.TimestampProto(now)
+	// Get the DB
+	db, err := connectToDB()
 
+	if err != nil {
+		t.Errorf("Couldn't connect to DB.")
+	}
+
+	// Start the server
+	s := NewBookServiceServer(db)
+
+	// run tests
 	type args struct {
 		ctx context.Context
 		req *v1.UpdateRequest
 	}
+
+	now, _ := time.Parse("RFC3339", "2002-10-02T10:00:00")
+	publishDate, _ := ptypes.TimestampProto(now)
+
 	tests := []struct {
 		name    string
 		s       v1.BookServiceServer
 		args    args
-		mock    func()
 		want    *v1.UpdateResponse
 		wantErr bool
 	}{
@@ -290,174 +288,102 @@ func Test_bookServiceServer_Update(t *testing.T) {
 					Api: "v1",
 					Book: &v1.Book{
 						Id:          1,
-						Title:       "new title",
-						Author:      "new author",
-						Publisher:   "new publisher",
+						Title:       "title (UPDATED)",
+						Author:      "author",
+						Publisher:   "publisher",
 						PublishDate: publishDate,
 						Rating:      2.0,
 						Status:      1,
 					},
 				},
-			},
-			mock: func() {
-				mock.ExpectExec("UPDATE Book").WithArgs("new title", "new author", "new publisher", now, 2.0, 1, 1).
-					WillReturnResult(sqlmock.NewResult(1, 1))
 			},
 			want: &v1.UpdateResponse{
 				Api:     "v1",
 				Updated: 1,
 			},
+			wantErr: false,
 		},
 		{
-			name: "Unsupported API",
+			name: "Invalid API Version",
 			s:    s,
 			args: args{
 				ctx: ctx,
 				req: &v1.UpdateRequest{
-					Api: "v1",
+					Api: "v10000",
 					Book: &v1.Book{
 						Id:          1,
-						Title:       "new title",
-						Author:      "new author",
-						Publisher:   "new publisher",
+						Title:       "title (UPDATED)",
+						Author:      "author",
+						Publisher:   "publisher",
 						PublishDate: publishDate,
 						Rating:      2.0,
 						Status:      1,
 					},
 				},
 			},
-			mock:    func() {},
 			wantErr: true,
 		},
 		{
-			name: "Invalid publishDate field format",
+			name: "Invalid Id value",
 			s:    s,
 			args: args{
 				ctx: ctx,
 				req: &v1.UpdateRequest{
 					Api: "v1",
 					Book: &v1.Book{
-						Title:     "new title",
-						Author:    "new author",
-						Publisher: "new publisher",
-						PublishDate: &timestamp.Timestamp{
-							Seconds: 1,
-							Nanos:   -1,
-						},
-						Rating: 2.0,
-						Status: 1,
-					},
-				},
-			},
-			mock:    func() {},
-			wantErr: true,
-		},
-		{
-			name: "UPDATE failed",
-			s:    s,
-			args: args{
-				ctx: ctx,
-				req: &v1.UpdateRequest{
-					Api: "v1",
-					Book: &v1.Book{
-						Id:          1,
-						Title:       "new title",
-						Author:      "new author",
-						Publisher:   "new publisher",
+						Id:          1000,
+						Title:       "title (UPDATED)",
+						Author:      "author",
+						Publisher:   "publisher",
 						PublishDate: publishDate,
 						Rating:      2.0,
 						Status:      1,
 					},
 				},
-			},
-			mock: func() {
-				mock.ExpectExec("UPDATE Book").WithArgs("new title", "new author", "new publisher", now, 2.0, 1, 1).
-					WillReturnError(errors.New("UPDATE failed"))
-			},
-			wantErr: true,
-		},
-		{
-			name: "RowsAffected failed",
-			s:    s,
-			args: args{
-				ctx: ctx,
-				req: &v1.UpdateRequest{
-					Api: "v1",
-					Book: &v1.Book{
-						Id:          1,
-						Title:       "new title",
-						Author:      "new author",
-						Publisher:   "new publisher",
-						PublishDate: publishDate,
-						Rating:      2.0,
-						Status:      1,
-					},
-				},
-			},
-			mock: func() {
-				mock.ExpectExec("UPDATE Book").WithArgs("new title", "new author", "new publisher", now, 2.0, 1, 1).
-					WillReturnResult(sqlmock.NewErrorResult(errors.New("RowsAffected failed")))
-			},
-			wantErr: true,
-		},
-		{
-			name: "Not Found",
-			s:    s,
-			args: args{
-				ctx: ctx,
-				req: &v1.UpdateRequest{
-					Api: "v1",
-					Book: &v1.Book{
-						Id:          1,
-						Title:       "new title",
-						Author:      "new author",
-						Publisher:   "new publisher",
-						PublishDate: publishDate,
-						Rating:      2.0,
-						Status:      1,
-					},
-				},
-			},
-			mock: func() {
-				mock.ExpectExec("UPDATE Book").WithArgs("new title", "new author", "new publisher", now, 2.0, 1, 1).
-					WillReturnResult(sqlmock.NewResult(1, 0))
 			},
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.mock()
 			got, err := tt.s.Update(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("bookServiceServer.Update() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("bookServiceServer.Read() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if err == nil && !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("bookServiceServer.Update() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("bookServiceServer.Read() = %v, want %v", got, tt.want)
+				return
 			}
 		})
 	}
+
+	defer db.Close()
 }
 
 func Test_bookServiceServer_Delete(t *testing.T) {
 	ctx := context.Background()
-	db, mock, err := sqlmock.New()
+	// Get the DB
+	db, err := connectToDB()
+
 	if err != nil {
-		t.Fatalf("error when opening stub database connection: '%s'", err)
+		t.Errorf("Couldn't connect to DB.")
 	}
-	defer db.Close()
+
+	// Start the server
 	s := NewBookServiceServer(db)
 
+	// run tests
 	type args struct {
 		ctx context.Context
 		req *v1.DeleteRequest
 	}
+
 	tests := []struct {
 		name    string
 		s       v1.BookServiceServer
 		args    args
-		mock    func()
 		want    *v1.DeleteResponse
 		wantErr bool
 	}{
@@ -471,46 +397,26 @@ func Test_bookServiceServer_Delete(t *testing.T) {
 					Id:  1,
 				},
 			},
-			mock: func() {
-				mock.ExpectExec("DELETE FROM Book").WithArgs(1).
-					WillReturnResult(sqlmock.NewResult(1, 1))
-			},
 			want: &v1.DeleteResponse{
 				Api:     "v1",
 				Deleted: 1,
 			},
+			wantErr: false,
 		},
 		{
-			name: "Unsupported API",
+			name: "Invalid API Version",
 			s:    s,
 			args: args{
 				ctx: ctx,
 				req: &v1.DeleteRequest{
-					Api: "v1",
+					Api: "v1000",
 					Id:  1,
 				},
-			},
-			mock:    func() {},
-			wantErr: true,
-		},
-		{
-			name: "DELETE failed",
-			s:    s,
-			args: args{
-				ctx: ctx,
-				req: &v1.DeleteRequest{
-					Api: "v1",
-					Id:  1,
-				},
-			},
-			mock: func() {
-				mock.ExpectExec("DELETE FROM Book").WithArgs(1).
-					WillReturnError(errors.New("DELETE failed"))
 			},
 			wantErr: true,
 		},
 		{
-			name: "RowsAffected failed",
+			name: "Invalid Id value",
 			s:    s,
 			args: args{
 				ctx: ctx,
@@ -518,67 +424,56 @@ func Test_bookServiceServer_Delete(t *testing.T) {
 					Api: "v1",
 					Id:  1,
 				},
-			},
-			mock: func() {
-				mock.ExpectExec("DELETE FROM Book").WithArgs(1).
-					WillReturnResult(sqlmock.NewErrorResult(errors.New("RowsAffected failed")))
-			},
-			wantErr: true,
-		},
-		{
-			name: "Not Found",
-			s:    s,
-			args: args{
-				ctx: ctx,
-				req: &v1.DeleteRequest{
-					Api: "v1",
-					Id:  1,
-				},
-			},
-			mock: func() {
-				mock.ExpectExec("DELETE FROM Book").WithArgs(1).
-					WillReturnResult(sqlmock.NewResult(1, 0))
 			},
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.mock()
 			got, err := tt.s.Delete(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("bookServiceServer.Delete() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("bookServiceServer.Read() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if err == nil && !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("bookServiceServer.Delete() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("bookServiceServer.Read() = %v, want %v", got, tt.want)
+				return
 			}
 		})
 	}
+
+	defer db.Close()
 }
 
 func Test_bookServiceServer_ReadAll(t *testing.T) {
 	ctx := context.Background()
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("error when opening stub database connection: '%s'", err)
-	}
-	defer db.Close()
-	s := NewBookServiceServer(db)
-	now1 := time.Now().In(time.UTC)
-	publishDate1, _ := ptypes.TimestampProto(now1)
-	now2 := time.Now().In(time.UTC)
-	publishDate2, _ := ptypes.TimestampProto(now2)
+	// Get the DB
+	db, err := connectToDB()
 
+	if err != nil {
+		t.Errorf("Couldn't connect to DB.")
+	}
+
+	// Start the server
+	s := NewBookServiceServer(db)
+
+	// Add some entries
+	addEntries(4)
+
+	// run tests
 	type args struct {
 		ctx context.Context
 		req *v1.ReadAllRequest
 	}
+
+	now, _ := time.Parse("RFC3339", "2002-10-02T10:00:00")
+	publishDate, _ := ptypes.TimestampProto(now)
+
 	tests := []struct {
 		name    string
 		s       v1.BookServiceServer
 		args    args
-		mock    func()
 		want    *v1.ReadAllResponse
 		wantErr bool
 	}{
@@ -591,12 +486,6 @@ func Test_bookServiceServer_ReadAll(t *testing.T) {
 					Api: "v1",
 				},
 			},
-			mock: func() {
-				rows := sqlmock.NewRows([]string{"Id", "Title", "Author", "Publisher", "PublishDate", "Rating", "Status"}).
-					AddRow(1, "title1", "author1", "publisher1", now1, 2.0, 1).
-					AddRow(2, "title2", "author2", "publisher2", now2, 3.0, 2)
-				mock.ExpectQuery("SELECT (.+) FROM Book").WillReturnRows(rows)
-			},
 			want: &v1.ReadAllResponse{
 				Api: "v1",
 				Books: []*v1.Book{
@@ -604,65 +493,68 @@ func Test_bookServiceServer_ReadAll(t *testing.T) {
 						Id:          1,
 						Title:       "title1",
 						Author:      "author1",
-						Publisher:   "publisher1",
-						PublishDate: publishDate1,
-						Rating:      2.0,
-						Status:      1,
+						Publisher:   "publisher",
+						PublishDate: publishDate,
+						Rating:      1.0,
+						Status:      2,
 					},
 					{
 						Id:          2,
 						Title:       "title2",
 						Author:      "author2",
-						Publisher:   "publisher2",
-						PublishDate: publishDate2,
-						Rating:      3.0,
+						Publisher:   "publisher",
+						PublishDate: publishDate,
+						Rating:      1.0,
+						Status:      2,
+					},
+					{
+						Id:          3,
+						Title:       "title3",
+						Author:      "author3",
+						Publisher:   "publisher",
+						PublishDate: publishDate,
+						Rating:      1.0,
+						Status:      2,
+					},
+					{
+						Id:          4,
+						Title:       "title4",
+						Author:      "author4",
+						Publisher:   "publisher",
+						PublishDate: publishDate,
+						Rating:      1.0,
 						Status:      2,
 					},
 				},
 			},
+			wantErr: false,
 		},
 		{
-			name: "Empty",
+			name: "Invalid API Version",
 			s:    s,
 			args: args{
 				ctx: ctx,
 				req: &v1.ReadAllRequest{
-					Api: "v1",
+					Api: "v1000",
 				},
 			},
-			mock: func() {
-				rows := sqlmock.NewRows([]string{"Id", "Title", "Author", "Publisher", "PublishDate", "Rating", "Status"})
-				mock.ExpectQuery("SELECT (.+) FROM Book").WillReturnRows(rows)
-			},
-			want: &v1.ReadAllResponse{
-				Api:   "v1",
-				Books: []*v1.Book{},
-			},
-		},
-		{
-			name: "Unsupported API",
-			s:    s,
-			args: args{
-				ctx: ctx,
-				req: &v1.ReadAllRequest{
-					Api: "v1",
-				},
-			},
-			mock:    func() {},
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.mock()
 			got, err := tt.s.ReadAll(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("bookServiceServer.ReadAll() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("bookServiceServer.Read() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("bookServiceServer.ReadAll() = %v, want %v", got, tt.want)
+				t.Errorf("bookServiceServer.Read() = %v, want %v", got, tt.want)
+				return
 			}
 		})
 	}
+
+	defer db.Close()
 }
