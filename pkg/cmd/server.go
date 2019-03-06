@@ -18,7 +18,7 @@ func RunServer() error {
 
 	dsn := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		"0.0.0.0",
+		"db",
 		5432,
 		"postgres-dev",
 		"sn34kyp4$$w0rD",
