@@ -57,6 +57,7 @@ func (s *bookServiceServer) Create(ctx context.Context, req *v1.CreateRequest) (
 	defer c.Close()
 
 	// Check for proper timestamp formatting
+	fmt.Println(req.Book)
 	publish_date, err := ptypes.Timestamp(req.Book.PublishDate)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "publish_date field has invalid format: "+err.Error())
