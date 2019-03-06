@@ -16,7 +16,8 @@ import (
 func RunServer() error {
 	ctx := context.Background()
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?%s",
+	dsn := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
 		"postgres-dev",
 		"sn34kyp4$$w0rD",
 		"127.0.0.1",
