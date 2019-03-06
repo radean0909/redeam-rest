@@ -63,8 +63,15 @@ func (s *bookServiceServer) Create(ctx context.Context, req *v1.CreateRequest) (
 	}
 
 	createSQL := `INSERT INTO Book (Title, Author, Publisher, PublishDate, Rating, Status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING Id`
-	id := 0
-	res, err := c.QueryRow(ctx, createSQL, req.Book.Title, req.Book.Author, req.Book.Publisher, publish_date, req.Book.Rating, req.Book.Status).Scan(&id)
+	var id int64
+
+	stmt, err := c.PrepareContext(ctx, createSQL)
+	if err != nil {
+		return nil, status.Error(codes.Unknown, "failed to insert: "+err.Error())
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(req.Book.Title, req.Book.Author, req.Book.Publisher, publish_date, req.Book.Rating, req.Book.Status).Scan(&id)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "failed to insert: "+err.Error())
 	}
