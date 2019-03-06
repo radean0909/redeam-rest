@@ -93,7 +93,7 @@ func (s *bookServiceServer) Read(ctx context.Context, req *v1.ReadRequest) (*v1.
 	}
 	defer c.Close()
 
-	rows, err := c.QueryContext(ctx, "SELECT Id, Title, Publisher, PublishDate, Rating, Status FROM Book WHERE Id=$1",
+	rows, err := c.QueryContext(ctx, "SELECT Id, Title, Author, Publisher, PublishDate, Rating, Status FROM Book WHERE Id=$1",
 		req.Id)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, "couldn't select: "+err.Error())
